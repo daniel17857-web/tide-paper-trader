@@ -1,0 +1,68 @@
+# F-09 / ADR-003, ADR-004:三排程 + 狀態回寫(bot commit, [skip ci] 防迴圈)
+# cron 皆為 UTC:08:30=台北16:30 主跑、08:00=倫敦加掃、13:30=紐約加掃
+name: tide-pipeline
+
+on:
+  schedule:
+    - cron: "30 8 * * 1-5"   # daily(台指期盤後 + 外匯日K)
+    - cron: "0 8 * * 1-5"    # london(外匯小時K加掃)
+    - cron: "30 13 * * 1-5"  # newyork(外匯小時K加掃)
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: "執行模式"
+        type: choice
+        options: [daily, london, newyork]
+        default: daily
+
+permissions:
+  contents: write
+
+concurrency:
+  group: tide-pipeline
+  cancel-in-progress: false
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10   # 非功能需求:全管線 < 5 分鐘,10 分鐘為硬上限
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: 安裝依賴
+        run: pip install -r requirements.txt
+
+      - name: 決定模式
+        id: mode
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "mode=${{ inputs.mode }}" >> "$GITHUB_OUTPUT"
+          elif [ "${{ github.event.schedule }}" = "30 8 * * 1-5" ]; then
+            echo "mode=daily" >> "$GITHUB_OUTPUT"
+          elif [ "${{ github.event.schedule }}" = "0 8 * * 1-5" ]; then
+            echo "mode=london" >> "$GITHUB_OUTPUT"
+          else
+            echo "mode=newyork" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: 執行管線
+        run: python scripts/run_pipeline.py --mode "${{ steps.mode.outputs.mode }}"
+
+      - name: 回寫狀態(bot commit)
+        if: always()
+        run: |
+          git config user.name "tide-bot"
+          git config user.email "tide-bot@users.noreply.github.com"
+          git add data state docs/index.html
+          if git diff --cached --quiet; then
+            echo "無狀態變更,略過 commit"
+          else
+            git commit -m "chore: state update $(date -u +%Y-%m-%dT%H:%MZ) [skip ci]"
+            git pull --rebase origin "${GITHUB_REF_NAME}"
+            git push origin "HEAD:${GITHUB_REF_NAME}"
+          fi

@@ -1,0 +1,11 @@
+track,symbol,timeframe,kind,direction,size,entry_date,entry_price,exit_date,exit_price,exit_reason,r_multiple,pnl
+chip,MTX,1d,zscore,long,2.0,2026-06-01,20000,2026-06-02,20100.0,target,1.0,10000
+chip,MTX,1d,zscore,long,2.0,2026-06-02,20000,2026-06-03,20050.0,target,0.5,5000
+chip,MTX,1d,zscore,long,2.0,2026-06-03,20000,2026-06-04,19950.0,stop,-1.0,-5000
+chip,MTX,1d,zscore,long,2.0,2026-06-04,20000,2026-06-05,19900.0,stop,-1.0,-10000
+chip,MTX,1d,zscore,long,2.0,2026-06-05,20000,2026-06-06,20200.0,target,2.0,20000
+chip,MTX,1d,zscore,long,2.0,2026-06-06,20000,2026-06-07,19975.0,stop,-0.25,-2500
+tech,EURUSD,1d,breakout,long,30000,2026-06-01,1.1,2026-06-02,1.11,target,1.0,300
+tech,EURUSD,1d,breakout,long,30000,2026-06-02,1.1,2026-06-03,1.09,stop,-1.0,-300
+tech,EURUSD,1d,breakout,long,30000,2026-06-03,1.1,2026-06-04,1.12,target,2.0,600
+tech,EURUSD,1d,breakout,long,30000,2026-06-04,1.1,2026-06-05,1.0950000000000002,stop,-0.5,-150

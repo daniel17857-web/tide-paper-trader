@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>潮汐模擬倉日報</title>
+<style>
+  :root { --ink:#1a2233; --line:#d8dee9; --muted:#5b6472; --accent:#0a5c8f; --bg:#f6f8fa; }
+  * { box-sizing:border-box; }
+  body { margin:0; padding:12px; font-family:-apple-system,"PingFang TC","Noto Sans TC",sans-serif;
+         color:var(--ink); background:var(--bg); font-size:15px; line-height:1.5; }
+  h1 { font-size:1.25rem; margin:4px 0 2px; }
+  h2 { font-size:1.05rem; margin:20px 0 8px; color:var(--accent); }
+  .date { color:var(--muted); font-size:.85rem; }
+  table { width:100%; border-collapse:collapse; background:#fff; font-size:.85rem;
+           table-layout:fixed; word-break:break-word; }
+  th,td { border:1px solid var(--line); padding:6px 4px; text-align:center; }
+  th { background:#eef2f6; font-weight:600; }
+  .empty { color:var(--muted); }
+  .disclaimer { margin-top:24px; padding:10px; border:1px solid var(--line); background:#fff;
+                 color:var(--muted); font-size:.78rem; }
+</style>
+</head>
+<body>
+<h1>潮汐模擬倉日報</h1>
+<div class="date">資料日期:2026-07-23 10:25(台北時間)</div>
+
+<h2>今日訊號</h2>
+<table><tr><th>軌別</th><th>標的</th><th>訊號</th><th>方向</th><th>狀態</th></tr>
+<tr><td>籌碼軌(台指期)</td><td>MTX</td><td>z-score 異常</td><td>—</td><td>資料不足</td></tr><tr><td>籌碼軌(台指期)</td><td>MTX</td><td>z-score 異常</td><td>—</td><td>資料不足</td></tr><tr><td>技術軌(外匯)</td><td>EURUSD</td><td>回調</td><td>空</td><td>有效</td></tr><tr><td>技術軌(外匯)</td><td>GBPUSD</td><td>回調</td><td>多</td><td>有效</td></tr></table>
+
+<h2>持倉狀態</h2>
+<table><tr><th>軌別</th><th>標的</th><th>方向</th><th>進場</th><th>停損</th><th>目標</th></tr>
+<tr><td colspan="6" class="empty">目前無持倉</td></tr></table>
+
+<h2>雙軌績效對照</h2>
+<table><tr><th>指標</th><th>籌碼軌(台指期)</th><th>技術軌(外匯)</th></tr><tr><td>已平倉筆數</td><td>0</td><td>0</td></tr><tr><td>勝率</td><td>—</td><td>—</td></tr><tr><td>平均 R</td><td>—</td><td>—</td></tr><tr><td>最大回撤</td><td>—</td><td>—</td></tr><tr><td>獲利因子</td><td>—</td><td>—</td></tr></table>
+
+<div class="disclaimer">
+本頁為<strong>純模擬交易</strong>結果:滑價與流動性為固定假設,數據僅供雙軌訊號邏輯之相對比較,
+不代表實盤可得之絕對報酬,亦不構成任何投資建議。本系統不執行任何真實下單。
+</div>
+</body>
+</html>
