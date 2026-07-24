@@ -1,1 +1,2 @@
 track,symbol,timeframe,kind,direction,size,entry_date,entry_price,stop,target,bars_held
+tech,EURUSD,1d,pullback,short,53213.70210606445,2026-07-24T00:00:00,1.1377153728485108,1.1478420495986938,1.1334270238876345,1
