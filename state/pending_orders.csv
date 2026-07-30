@@ -1,1 +1,2 @@
 track,symbol,timeframe,kind,direction,signal_date,entry_ref,stop,target,size
+tech,USDJPY,1d,pullback,long,2026-07-30T00:00:00,162.81399536132812,162.14700317382812,163.94900512695312,72930.54081259151
