@@ -1,2 +1,1 @@
 track,symbol,timeframe,kind,direction,signal_date,entry_ref,stop,target,size
-tech,AUDUSD,1h,breakout,long,2026-08-04T11:00:00+01:00,0.7035317420959473,0.7025455896343503,0.7055040470191412,304212.5956002677
