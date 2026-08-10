@@ -1,1 +1,2 @@
 track,symbol,timeframe,kind,direction,signal_date,entry_ref,stop,target,size
+tech,USDJPY,1h,breakout,long,2026-08-10T10:00:00+01:00,158.76800537109375,158.5014365059989,159.30114310128346,178379.53781616496
