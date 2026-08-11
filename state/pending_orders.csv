@@ -1,1 +1,2 @@
 track,symbol,timeframe,kind,direction,signal_date,entry_ref,stop,target,size
+tech,AUDUSD,1h,pullback,long,2026-08-11T15:00:00+01:00,0.7071635127067566,0.7059947145836694,0.7095011089529311,256673.92347241938
