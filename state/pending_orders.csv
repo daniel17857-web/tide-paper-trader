@@ -1,1 +1,2 @@
 track,symbol,timeframe,kind,direction,signal_date,entry_ref,stop,target,size
+chip,MTX,1d,streak,short,2026-08-12,45528.0,45561.0,45462.0,6.0606060606060606
