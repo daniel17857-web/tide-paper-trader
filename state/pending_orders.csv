@@ -1,3 +1,2 @@
 track,symbol,timeframe,kind,direction,signal_date,entry_ref,stop,target,size
-tech,USDJPY,1h,pullback,short,2026-08-17T09:00:00+01:00,159.08200073242188,159.25,158.74600219726562,284376.2397820164
 chip,MTX,1d,streak,short,2026-08-14,45841.0,46470.0,44583.0,0.3179650238473768
