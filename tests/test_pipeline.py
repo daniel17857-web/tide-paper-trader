@@ -1,4 +1,4 @@
-# T-11(邏輯部分):advance_broker 的次K進場、cursor 推進、pending 持久化
+# T-11(R2 邏輯):advance_broker 次K進場、cursor 推進、pending 持久化、冪等
 import os
 import sys
 
@@ -15,8 +15,8 @@ from core.models import Order, Plan, PortfolioState, Signal
 def _order():
     s = Signal(track="tech", symbol="EURUSD", date="2026-06-01", kind="breakout",
                direction="long")
-    plan = Plan(signal=s, entry_ref=1.1000, stop=1.0950, target=1.1100, rr=2.0)
-    return Order(plan=plan, size=30000.0, status="approved")
+    plan = Plan(signal=s, entry_ref=1.1000, stop=1.0950, target=1.1150, rr=3.0)
+    return Order(plan=plan, size=0.0, status="approved")
 
 
 def _series():
@@ -25,8 +25,8 @@ def _series():
          "low": 1.0980, "close": 1.1000},
         {"timestamp": "2026-06-02", "open": 1.1010, "high": 1.1050,
          "low": 1.0990, "close": 1.1040},
-        {"timestamp": "2026-06-03", "open": 1.1045, "high": 1.1105,
-         "low": 1.1030, "close": 1.1090},
+        {"timestamp": "2026-06-03", "open": 1.1045, "high": 1.1160,
+         "low": 1.1030, "close": 1.1120},
     ])}
 
 
@@ -38,10 +38,11 @@ def test_advance_fills_on_next_bar_after_signal():
     state = _state()
     pending = [_order()]
     cursors = {("EURUSD", "1d"): "2026-06-01"}  # 已處理到訊號K
-    closed = pipeline.advance_broker(_series(), state, pending, cursors)
-    # 6/2 開盤 1.1010+0.0002 進場,6/3 觸目標出場
-    assert len(closed) == 1
+    closed, rejects = pipeline.advance_broker(_series(), state, pending, cursors)
+    # 6/2 開盤 1.1010+0.0002 進場(成交時定部位),6/3 觸目標出場
+    assert len(closed) == 1 and rejects == []
     assert closed[0].entry_price == pytest.approx(1.1012)
+    assert closed[0].size == pytest.approx(300.0 / 0.0062)
     assert closed[0].exit_reason == "target"
     assert pending == []  # 已消耗
     assert cursors[("EURUSD", "1d")] == "2026-06-03"
@@ -50,8 +51,8 @@ def test_advance_fills_on_next_bar_after_signal():
 def test_first_seen_series_sets_cursor_without_replay():
     state = _state()
     cursors = {}
-    closed = pipeline.advance_broker(_series(), state, [], cursors)
-    assert closed == [] and state.positions == []
+    closed, rejects = pipeline.advance_broker(_series(), state, [], cursors)
+    assert closed == [] and rejects == [] and state.positions == []
     assert cursors[("EURUSD", "1d")] == "2026-06-03"
 
 
@@ -63,16 +64,31 @@ def test_pending_roundtrip(tmp_path):
     o = loaded[0]
     assert o.plan.signal.symbol == "EURUSD" and isinstance(o.plan.signal.symbol, str)
     assert o.plan.stop == pytest.approx(1.0950)
-    assert o.size == pytest.approx(30000.0)
 
 
 def test_rerun_idempotent_no_duplicate_orders():
-    """同一天重跑:pending 已有同 (symbol, timeframe, 訊號日) 的單不得重複。"""
     state = _state()
     existing = _order()
     sig = existing.plan.signal
-    approved, _ = pipeline.generate_orders([sig], _series(), state, [existing])
+    approved, rejects, outcomes = pipeline.generate_orders(
+        [sig], _series(), state, [existing])
     assert approved == []
+
+
+def test_generate_orders_records_rejects_and_outcomes():
+    """風控拒單要落 rejects 與 outcomes(R2-08)。"""
+    from core.models import TrackStatus
+    state = _state()
+    state.track_status["tech"] = TrackStatus(status="terminated", resets=2)
+    sig = Signal(track="tech", symbol="EURUSD", date="2026-06-25",
+                 kind="breakout", direction="long")
+    rows = [{"timestamp": f"2026-06-{i:02d}", "open": 1.1, "high": 1.2 if i == 18 else 1.11,
+             "low": 1.05, "close": 1.1} for i in range(1, 26)]
+    series = {("EURUSD", "1d"): pd.DataFrame(rows)}
+    approved, rejects, outcomes = pipeline.generate_orders([sig], series, state)
+    assert approved == []
+    assert rejects[0]["reason"] == "track_terminated"
+    assert outcomes[("EURUSD", "1d", "breakout")] == "track_terminated"
 
 
 def test_cursor_roundtrip(tmp_path):
