@@ -116,11 +116,11 @@ def _try_fill(order: Order, bar: dict) -> tuple[Position | None, str]:
     if stop_dist < config.MIN_STOP_SLIP_RATIO * slip:   # R2-02 成交複檢
         return None, "stop_too_tight_at_fill"
 
+    # 通過上式必有 stop_dist ≥ 10×slip > 0;reward ≤ 0(滑價使進場越過目標)
+    # 即 fill RR ≤ 0 < MIN_RR,統一歸入 rr_degraded_at_fill(R2-01 成交 RR 複檢)
     reward = (plan.target - entry) * d
-    if stop_dist <= 0 or reward <= 0:
-        return None, "gap_through_target" if reward <= 0 else "gap_through_stop"
     fill_rr = reward / stop_dist
-    if fill_rr < config.MIN_RR:                          # R2-01 成交 RR 複檢
+    if fill_rr < config.MIN_RR:
         return None, "rr_degraded_at_fill"
 
     size = risk.position_size_at_fill(sig.track, sig.symbol, entry, plan.stop)
@@ -268,8 +268,9 @@ def load_state(state_dir: str = config.R2_STATE_DIR) -> PortfolioState:
     if os.path.exists(ts_path):
         df = pd.read_csv(ts_path, dtype=str)
         for _, r in df.iterrows():
+            halt_date = "" if pd.isna(r["halt_date"]) else str(r["halt_date"])
             state.track_status[str(r["track"])] = TrackStatus(
-                status=str(r["status"]), halt_date=str(r["halt_date"] or ""),
+                status=str(r["status"]), halt_date=halt_date,
                 resets=int(r["resets"]))
     return state
 

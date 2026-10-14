@@ -155,10 +155,9 @@ def _round1_block() -> str:
     metrics = stats.summarize(ledger)
     return f"""
 <h2>第一輪(已封存)</h2>
-<div class="note">第一輪評估期 2026-07-23 ~ round1-final;機制已於第二輪變更
-(sizing 基準、R 刻度、取樣框),<strong>兩輪指標不可直接比較</strong>,
-永不宣稱「第二輪比第一輪進步」。第二輪資本已重置
-(技術軌第一輪 −12.47% 不帶入,僅紀錄於此)。</div>
+<div class="note">第一輪評估期自 2026-07-23 起,封存於 round1-final;下表由封存台帳計算。
+機制已於第二輪變更(sizing 基準、R 刻度、取樣框),<strong>兩輪指標不可直接比較</strong>,
+永不宣稱「第二輪比第一輪進步」。第二輪資本已重置,第一輪損益不帶入、僅紀錄於此。</div>
 <table>{_metrics_table(metrics)}</table>
 """
 
@@ -198,7 +197,7 @@ def build_html(run_date: str, signals: list, state, metrics: dict,
 </head>
 <body>
 <h1>潮汐模擬倉日報(第二輪)</h1>
-<div class="date">資料日期:{html.escape(run_date)}(台北時間)|最近執行:{html.escape(run_date)}</div>
+<div class="date">最近執行:{html.escape(run_date)}(台北時間;資料新鮮度另見下方快照空洞檢查)</div>
 {_equity_gap_note(run_date)}
 
 <h2>各軌風控狀態</h2>
@@ -231,9 +230,8 @@ def build_html(run_date: str, signals: list, state, metrics: dict,
 """
 
 
-def _zero_fill_streaks(run_date: str) -> dict:
+def _zero_fill_streaks(run_date: str, ledger: pd.DataFrame) -> dict:
     """各軌連續零成交「交易日」數(以該軌 equity 快照日近似交易日曆)。"""
-    ledger = broker.load_ledger()
     eq_path = broker.EQUITY_PATH
     if not os.path.exists(eq_path):
         return {}
@@ -263,7 +261,7 @@ def write_report(run_date: str, signals: list, state, ledger=None,
         ledger = broker.load_ledger()
     metrics = stats.summarize(ledger)
     html_text = build_html(run_date, signals, state, metrics, outcomes=outcomes,
-                           zero_fill_streaks=_zero_fill_streaks(run_date))
+                           zero_fill_streaks=_zero_fill_streaks(run_date, ledger))
     os.makedirs(os.path.dirname(path), exist_ok=True)
     with open(path, "w", encoding="utf-8") as f:
         f.write(html_text)

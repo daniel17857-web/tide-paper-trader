@@ -43,11 +43,15 @@ def risk_nominal(track: str) -> float:
     return config.CAPITAL[track] * config.RISK_PCT
 
 
-def check(plan: Plan, state: PortfolioState) -> Order:
-    """資格單(approved,size=預估)或 Rejected(reason)。既有持倉一律不受影響(AC-13)。"""
+def check(plan: Plan, state: PortfolioState,
+          pending: list | None = None) -> Order:
+    """資格單(approved,size=預估)或 Rejected(reason)。既有持倉一律不受影響(AC-13)。
+    pending:已核准、尚未成交的單(含上次執行遺留與本次已核准者)——
+    曝險上限與重複標的檢核將其視同持倉,防止「同批多單核准後同時成交」突破上限。"""
     if plan.status != "ok":
         return Order(plan=plan, status="rejected", reject_reason="plan_" + plan.reject_reason)
 
+    pending = [o for o in (pending or []) if o.status == "approved"]
     track = plan.signal.track
     ts = state.status_of(track)
     if ts.status == TRACK_TERMINATED:
@@ -55,11 +59,14 @@ def check(plan: Plan, state: PortfolioState) -> Order:
     if ts.status == TRACK_HALTED or state.drawdown(track) >= config.DRAWDOWN_HALT:
         return Order(plan=plan, status="rejected", reject_reason="drawdown_halt")
 
-    if state.open_count() >= config.MAX_OPEN_TOTAL:
+    pend_total = len(pending)
+    pend_track = sum(1 for o in pending if o.plan.signal.track == track)
+    if state.open_count() + pend_total >= config.MAX_OPEN_TOTAL:
         return Order(plan=plan, status="rejected", reject_reason="exposure_cap")
-    if state.open_count(track) >= config.MAX_OPEN_PER_TRACK:
+    if state.open_count(track) + pend_track >= config.MAX_OPEN_PER_TRACK:
         return Order(plan=plan, status="rejected", reject_reason="exposure_cap_track")
-    if any(p.symbol == plan.signal.symbol for p in state.positions):
+    if any(p.symbol == plan.signal.symbol for p in state.positions) or \
+            any(o.plan.signal.symbol == plan.signal.symbol for o in pending):
         return Order(plan=plan, status="rejected", reject_reason="duplicate_symbol")
 
     est = position_size(plan)

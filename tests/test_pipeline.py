@@ -97,3 +97,35 @@ def test_cursor_roundtrip(tmp_path):
                            ("MTX", "1d"): "2026-06-02"}, path)
     assert pipeline.load_cursors(path) == {("EURUSD", "1d"): "2026-06-03",
                                            ("MTX", "1d"): "2026-06-02"}
+
+
+def test_pending_roundtrip_preserves_rr(tmp_path):
+    """審查修正 F1:pending 必須保存 rr,否則台帳 planned_rr 全為 0。"""
+    path = str(tmp_path / "pending.csv")
+    pipeline.save_pending([_order()], path)
+    o = pipeline.load_pending(path)[0]
+    assert o.plan.rr == pytest.approx(3.0)
+
+
+def test_halted_track_blocks_pending_fill():
+    """審查修正 F2:核准後才熔斷的軌,pending 單不得成交,消耗並記拒單。"""
+    from core.models import TrackStatus
+    state = _state()
+    state.track_status["tech"] = TrackStatus(status="halted", halt_date="2026-06-01")
+    pending = [_order()]
+    cursors = {("EURUSD", "1d"): "2026-06-01"}
+    closed, rejects = pipeline.advance_broker(_series(), state, pending, cursors)
+    assert state.positions == [] and closed == []
+    assert pending == []  # 已消耗
+    assert rejects[0]["reason"] == "drawdown_halt"
+
+
+def test_terminated_track_blocks_pending_fill():
+    from core.models import TrackStatus
+    state = _state()
+    state.track_status["tech"] = TrackStatus(status="terminated", resets=2)
+    pending = [_order()]
+    cursors = {("EURUSD", "1d"): "2026-06-01"}
+    closed, rejects = pipeline.advance_broker(_series(), state, pending, cursors)
+    assert state.positions == [] and pending == []
+    assert rejects[0]["reason"] == "track_terminated"

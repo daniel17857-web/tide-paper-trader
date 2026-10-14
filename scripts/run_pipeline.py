@@ -35,7 +35,7 @@ PENDING_PATH = os.path.join(config.R2_STATE_DIR, "pending_orders.csv")
 CURSOR_PATH = os.path.join(config.STATE_DIR, "cursor.csv")  # 跨輪延續(R2-06)
 PENDING_COLUMNS = [
     "track", "symbol", "timeframe", "kind", "direction", "signal_date",
-    "entry_ref", "stop", "target", "size",
+    "entry_ref", "stop", "target", "rr", "size",
 ]
 
 
@@ -55,7 +55,8 @@ def load_pending(path: str = PENDING_PATH) -> list[Order]:
                      date=str(r["signal_date"]), kind=str(r["kind"]),
                      direction=str(r["direction"]), timeframe=str(r["timeframe"]))
         plan = Plan(signal=sig, entry_ref=float(r["entry_ref"]),
-                    stop=float(r["stop"]), target=float(r["target"]))
+                    stop=float(r["stop"]), target=float(r["target"]),
+                    rr=float(r["rr"]) if "rr" in df.columns else 0.0)
         orders.append(Order(plan=plan, size=float(r["size"]), status="approved"))
     return orders
 
@@ -68,7 +69,8 @@ def save_pending(orders: list[Order], path: str = PENDING_PATH) -> None:
         for o in orders:
             s = o.plan.signal
             w.writerow([s.track, s.symbol, s.timeframe, s.kind, s.direction,
-                        s.date, o.plan.entry_ref, o.plan.stop, o.plan.target, o.size])
+                        s.date, o.plan.entry_ref, o.plan.stop, o.plan.target,
+                        o.plan.rr, o.size])
 
 
 # ── cursor 持久化 ──
@@ -120,15 +122,34 @@ def advance_broker(series: dict, state, pending: list[Order],
         bars = events[ts]
         fillable, still_pending = [], []
         for o in pending:
-            key = (o.plan.signal.symbol, o.plan.signal.timeframe)
-            if key in bars and str(o.plan.signal.date) < ts:
-                fillable.append(o)   # 訊號次一根K:試單一次,成敗皆消耗
-            else:
+            sig = o.plan.signal
+            key = (sig.symbol, sig.timeframe)
+            if key not in bars or str(sig.date) >= ts:
                 still_pending.append(o)
+                continue
+            # R2-05:成交前複檢軌道狀態——核准後才熔斷/終止的軌,pending 單
+            # 不得進場(消耗該單並記拒單),否則冷卻解除條件(無持倉)也會被卡
+            status = state.status_of(sig.track).status
+            if status == TRACK_TERMINATED:
+                rejects_all.append({"date": ts, "track": sig.track,
+                                    "symbol": sig.symbol, "kind": sig.kind,
+                                    "timeframe": sig.timeframe,
+                                    "reason": "track_terminated"})
+                continue
+            if status == TRACK_HALTED:
+                rejects_all.append({"date": ts, "track": sig.track,
+                                    "symbol": sig.symbol, "kind": sig.kind,
+                                    "timeframe": sig.timeframe,
+                                    "reason": "drawdown_halt"})
+                continue
+            fillable.append(o)   # 訊號次一根K:試單一次,成敗皆消耗
         state, closed, frej = broker.on_new_bar(state, bars, fillable)
         pending[:] = still_pending
         closed_all.extend(closed)
         rejects_all.extend(frej)
+        # 逐K推進中可能觸熔斷(平倉更新權益後),立即更新狀態,
+        # 使同批後續K的 pending 單在新狀態下被攔截
+        update_halt_state(state, ts, as_of=ts)
     return closed_all, rejects_all
 
 
@@ -147,8 +168,12 @@ def _track_trading_dates(track: str) -> list[str]:
     return sorted(dates)
 
 
-def update_halt_state(state, run_date: str) -> None:
-    """每次執行於撮合後呼叫:記錄新熔斷事件、處理冷卻解除與終止。零隨機。"""
+def update_halt_state(state, run_date: str, as_of: str | None = None) -> None:
+    """記錄新熔斷事件、處理冷卻解除與終止。零隨機。
+    advance_broker 逐K呼叫時 run_date = 該K時間戳,故 halt_date 即觸發K的
+    K棒日(TrackStatus 語義);as_of 限制冷卻計數只看 ≤ 該日的K棒日,
+    防止 catch-up 重播舊K時用到磁碟上更晚的日期。"""
+    cutoff = (as_of or run_date)[:10]
     for track in sorted(config.CAPITAL):
         ts = state.status_of(track)
         if ts.status == TRACK_TERMINATED:
@@ -174,7 +199,8 @@ def update_halt_state(state, run_date: str) -> None:
                             track, state.drawdown(track) * 100)
         elif ts.status == TRACK_HALTED:
             # 冷卻解除:滿 HALT_COOLDOWN_DAYS 個該軌交易日,且該軌無持倉(D-01)
-            elapsed = [d for d in _track_trading_dates(track) if d > ts.halt_date]
+            elapsed = [d for d in _track_trading_dates(track)
+                       if ts.halt_date < d <= cutoff]
             if (len(elapsed) >= config.HALT_COOLDOWN_DAYS
                     and state.open_count(track) == 0):
                 ts.status = TRACK_ACTIVE
@@ -203,7 +229,8 @@ def generate_orders(signals: list[Signal], series: dict, state,
         if df is None:
             continue
         plan = make_plan(s, df)
-        order = risk.check(plan, state)
+        # pending(上次遺留)+ 本次已核准者皆視同持倉納入曝險檢核(R2 審查修正)
+        order = risk.check(plan, state, pending=(pending or []) + approved)
         if order.status == "approved":
             approved.append(order)
             seen.add((s.symbol, s.timeframe, s.date))

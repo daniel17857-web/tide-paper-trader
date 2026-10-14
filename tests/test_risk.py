@@ -107,3 +107,32 @@ def test_rejected_plan_stays_rejected():
     plan = _plan()
     plan.status, plan.reject_reason = "rejected", "rr_below_min"
     assert risk.check(plan, _state()).status == "rejected"
+
+
+def _pending_order(track="tech", symbol="GBPUSD"):
+    from core.models import Order
+    s = Signal(track=track, symbol=symbol, date="2026-07-23",
+               kind="breakout", direction="long")
+    p = Plan(signal=s, entry_ref=1.3, stop=1.29, target=1.33, rr=3.0)
+    return Order(plan=p, size=1.0, status="approved")
+
+
+def test_exposure_cap_counts_pending():
+    """審查修正 F3:pending 單視同持倉納入曝險上限。"""
+    st = _state(n_chip=1, n_tech=1)   # 2 持倉 + 1 pending = 3 → 拒
+    order = risk.check(_plan(), st, pending=[_pending_order()])
+    assert order.reject_reason == "exposure_cap"
+
+
+def test_track_cap_counts_pending():
+    st = _state(n_tech=1)   # tech 1 持倉 + 1 tech pending = 2 → 同軌拒
+    plan = _plan("tech", "EURUSD", entry=1.1, stop=1.09, target=1.13)
+    order = risk.check(plan, st, pending=[_pending_order()])
+    assert order.reject_reason == "exposure_cap_track"
+
+
+def test_duplicate_symbol_counts_pending():
+    st = _state()
+    plan = _plan("tech", "GBPUSD", entry=1.3, stop=1.29, target=1.33)
+    order = risk.check(plan, st, pending=[_pending_order(symbol="GBPUSD")])
+    assert order.reject_reason == "duplicate_symbol"

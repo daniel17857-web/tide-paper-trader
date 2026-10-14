@@ -255,3 +255,11 @@ def test_state_roundtrip_with_r2_fields(tmp_path):
     assert p.risk_actual == pytest.approx(300.0, abs=0.01)
     assert p.fill_rr == pytest.approx(2.2258, abs=0.0001)
     assert loaded.status_of("tech").status == "active"
+
+
+def test_state_roundtrip_halt_date_empty_not_nan(tmp_path):
+    """審查修正 F4:空 halt_date 讀回必須是空字串,不得變 'nan'。"""
+    state = _state()
+    broker.save_state(state, "2026-06-02 16:30", state_dir=str(tmp_path))
+    loaded = broker.load_state(state_dir=str(tmp_path))
+    assert loaded.status_of("tech").halt_date == ""
