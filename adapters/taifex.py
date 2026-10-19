@@ -6,6 +6,8 @@
 # 歷史檔:data/taifex_history.csv,append 累積、date 去重(AC-01/AC-02)。
 from __future__ import annotations
 
+import csv
+import io
 import logging
 import os
 
@@ -31,10 +33,40 @@ _INST_MAP = {"外資": "foreign_net", "外資及陸資": "foreign_net",
              "投信": "trust_net", "自營商": "dealer_net"}
 
 
-def _get_json(url: str, timeout: int = 30) -> list:
+# OpenAPI 偶爾經 CDN 回傳 CSV(content-disposition: attachment)而非 JSON。
+# 這是 CSV 中文表頭 → JSON 鍵的格式對照,不是參數。
+_OHLC_CSV_MAP = {
+    "日期": "Date", "契約代號": "Contract", "到期月份(週別)": "ContractMonth(Week)",
+    "開盤價": "Open", "最高價": "High", "最低價": "Low", "最後成交價": "Last",
+    "合計成交量": "Volume", "交易時段": "TradingSession",
+}
+
+
+def _get_rows(url: str, csv_map: dict | None, timeout: int = 30) -> list[dict]:
+    """GET 端點並回傳 JSON list。回應非 JSON 時:csv_map 為 None 直接拋錯,
+    否則依 csv_map 把 CSV 轉成與 JSON 同鍵的 list[dict](值保持字串)。"""
     resp = requests.get(url, timeout=timeout, headers={"User-Agent": "tide-paper-trader"})
     resp.raise_for_status()
-    return resp.json()
+    try:
+        return resp.json()
+    except ValueError as exc:  # requests.exceptions.JSONDecodeError 是其子類
+        if csv_map is None:
+            raise RuntimeError(f"TAIFEX {url} 回應非 JSON") from exc
+        rows = _parse_csv_rows(resp.content.decode("utf-8-sig"), csv_map)
+        log.warning("TAIFEX %s 回傳 CSV,改用 CSV 解析", url)
+        return rows
+
+
+def _parse_csv_rows(text: str, csv_map: dict) -> list[dict]:
+    reader = csv.DictReader(io.StringIO(text))
+    reader.fieldnames = [(f or "").strip() for f in (reader.fieldnames or [])]
+    missing = [k for k in csv_map if k not in reader.fieldnames]
+    if missing:
+        raise ValueError("TAIFEX CSV 缺欄:" + "、".join(missing))
+    return [
+        {json_key: (raw.get(zh_key) or "").strip() for zh_key, json_key in csv_map.items()}
+        for raw in reader
+    ]
 
 
 def _iso_date(yyyymmdd: str) -> str:
@@ -105,8 +137,8 @@ def append_row(history: pd.DataFrame, row: dict) -> pd.DataFrame:
 
 def fetch_daily(path: str = HISTORY_PATH) -> pd.DataFrame:
     """抓當日資料併入歷史檔。無新資料時不寫入空列、正常結束(AC-02)。"""
-    ohlc = parse_ohlc(_get_json(OHLC_ENDPOINT))
-    inst = parse_institutional(_get_json(INST_ENDPOINT))
+    ohlc = parse_ohlc(_get_rows(OHLC_ENDPOINT, _OHLC_CSV_MAP))
+    inst = parse_institutional(_get_rows(INST_ENDPOINT, None))
     history = load_history(path)
     if ohlc is None or inst is None or ohlc["date"] != inst["date"]:
         log.info("無新資料(非交易日或尚未公布),不寫入。")
