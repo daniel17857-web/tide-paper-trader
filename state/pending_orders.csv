@@ -1,2 +1,1 @@
 track,symbol,timeframe,kind,direction,signal_date,entry_ref,stop,target,size
-chip,MTX,1d,zscore,short,2026-11-09,41423.0,43555.67857142857,37694.0,0.09377878255044791
