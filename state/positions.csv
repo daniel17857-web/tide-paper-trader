@@ -1,1 +1,2 @@
 track,symbol,timeframe,kind,direction,size,entry_date,entry_price,stop,target,bars_held
+chip,MTX,1d,zscore,short,0.08598188238906805,2026-11-12,44164.0,46417.07142857143,39438.857142857145,1
