@@ -14,3 +14,10 @@ date,track,symbol,timeframe,kind,status,detail
 2026-11-27T00:00:00,tech,AUDUSD,1d,momentum,metric,body_atr_ratio=0.279;threshold=1.5;trend=down;bull=1;close_vs_hh=-0.039629;close_vs_ll=0.008726
 2026-11-26,chip,MTX,1d,zscore,approved,institution=trust;z=2.3573
 2026-11-26,chip,MTX,1d,streak,suppressed_by:zscore,days=5
+2026-11-27T22:00:00+00:00,tech,EURUSD,1h,momentum,metric,body_atr_ratio=0.0;threshold=1.5;trend=down;bull=0;close_vs_hh=-0.004928;close_vs_ll=0.000478
+2026-11-27T22:00:00+00:00,tech,USDJPY,1h,momentum,metric,body_atr_ratio=0.0;threshold=1.5;trend=up;bull=0;close_vs_hh=-0.080002;close_vs_ll=0.380005
+2026-11-27T22:00:00+00:00,tech,GBPUSD,1h,momentum,metric,body_atr_ratio=0.0;threshold=1.5;trend=down;bull=0;close_vs_hh=-0.003613;close_vs_ll=0.000686
+2026-11-27T22:00:00+00:00,tech,AUDUSD,1h,momentum,metric,body_atr_ratio=0.0;threshold=1.5;trend=down;bull=0;close_vs_hh=-0.003245;close_vs_ll=0.001192
+2026-11-27T22:00:00+00:00,tech,USDJPY,1h,pullback,stop_too_tight,ema=159.460438
+2026-11-27T22:00:00+00:00,tech,GBPUSD,1h,pullback,stop_too_tight,ema=1.310806
+2026-11-27T22:00:00+00:00,tech,AUDUSD,1h,pullback,stop_too_tight,ema=0.665399

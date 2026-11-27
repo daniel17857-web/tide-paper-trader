@@ -1,3 +1,6 @@
 date,track,symbol,kind,timeframe,reason
 2026-11-27T18:00:00+00:00,tech,USDJPY,pullback,1h,stop_too_tight
 2026-11-27T18:00:00+00:00,tech,AUDUSD,pullback,1h,stop_too_tight
+2026-11-27T22:00:00+00:00,tech,USDJPY,pullback,1h,stop_too_tight
+2026-11-27T22:00:00+00:00,tech,GBPUSD,pullback,1h,stop_too_tight
+2026-11-27T22:00:00+00:00,tech,AUDUSD,pullback,1h,stop_too_tight
