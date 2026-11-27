@@ -61,8 +61,11 @@
 
 ## (g) 凍結標記
 
-- 啟動 commit hash:**(封存切換時回填)**
-- 第一輪封存檔 SHA-256(`scripts/archive_round1.py` 產出):**(封存切換時回填)**
+- 啟動 commit hash:`b729b742dee572041f32cee6e10a2dd7afa18a38`
+- 第一輪封存檔 SHA-256(`scripts/archive_round1.py` 產出):
+  - `state/ledger.csv`: `fba0681911f3d9ef0973118c33bcce1b45df46a7f9c1d770716b7da4803265f1`
+  - `state/equity.csv`: `e653f81cc3018162e534e03b30f8134cd0b00dfa6ad1f79b004d5a80aaf2b502`
+  - `state/positions.csv`: `f80a722729bce7973059bb9dfd986975825643ffa815c8f60af99c787587026f`
 - 本文件最後修改 commit 必須早於第二輪首筆交易之 exit_date(以 git log 可稽)。
 
 ## (h) 範圍與規則註記
