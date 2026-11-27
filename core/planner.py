@@ -40,6 +40,12 @@ def make_plan(signal: Signal, df: pd.DataFrame) -> Plan:
     if risk <= 0:
         return Plan(signal=signal, status="rejected", reject_reason="invalid_stop")
 
+    # R2-02 預檢:停損距離 < MIN_STOP_SLIP_RATIO×滑價 → 摩擦主導,拒單
+    slip = config.slippage(signal.track, signal.symbol)
+    if risk < config.MIN_STOP_SLIP_RATIO * slip:
+        return Plan(signal=signal, stop=stop, status="rejected",
+                    reject_reason="stop_too_tight")
+
     # 目標候選:2R vs 前波極值;取離進場「較近者」
     prior = df.iloc[-(config.PRIOR_EXTREME_WINDOW + 1):-1]
     two_r = close + d * config.TARGET_R * risk
@@ -57,9 +63,10 @@ def make_plan(signal: Signal, df: pd.DataFrame) -> Plan:
         return Plan(signal=signal, status="rejected", reject_reason="invalid_target")
 
     rr = reward / risk
-    slip = config.slippage(signal.track, signal.symbol)
     entry_zone = (min(close - slip, close + slip), max(close - slip, close + slip))
-    invalidation = "次K開盤已越過停損則不進場;進場後 %d 根K未觸發停損/目標以收盤價出場" % config.MAX_HOLD_BARS
+    # R2-04:持倉上限按週期查表(缺鍵即 KeyError,禁止默認值)
+    invalidation = ("次K開盤已越過停損則不進場;進場後 %d 根K未觸發停損/目標以收盤價出場"
+                    % config.MAX_HOLD_BARS[signal.timeframe])
 
     plan = Plan(
         signal=signal, entry_ref=close, entry_zone=entry_zone,

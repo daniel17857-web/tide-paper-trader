@@ -8,10 +8,12 @@ CAPITAL = {
 }
 RISK_PCT = 0.01            # 單筆風險 = 虛擬資金 1%(AC-11)
 
-# ── 曝險與熔斷(F-06)──
+# ── 曝險與熔斷(F-06;R2-05 採 A 案:冷卻+重置+次數上限)──
 MAX_OPEN_TOTAL = 3         # 同時持倉 ≤ 3 筆(全帳戶)
 MAX_OPEN_PER_TRACK = 2     # 同軌 ≤ 2 筆
-DRAWDOWN_HALT = 0.10       # 權益自高點回落 ≥ 10% 停止新倉(各軌獨立計算)
+DRAWDOWN_HALT = 0.10       # 權益自高點回落 ≥ 10% 停止新倉(各軌獨立計算;prereg 禁止放寬)
+HALT_COOLDOWN_DAYS = 20    # 熔斷冷卻:該軌自身K棒日曆 20 個交易日,且解除時須無持倉(D-01)
+HALT_MAX_RESETS = 2        # 重置上限:同軌第 3 次熔斷 → 本輪終止取樣(track_terminated)
 
 # ── 商品規格 ──
 MTX_SYMBOL = "MTX"         # 小台指(模擬計價用代號,字串)
@@ -54,12 +56,15 @@ STRUCTURE_WINDOW = 10      # 結構低/高點 = 近 10 根極值(含訊號當根
 STOP_ATR_MULT = 1.5        # 停損候選:1.5×ATR14,與結構極值取「較近者」
 TARGET_R = 2.0             # 目標候選:2R,與前波高/低取「較近者」
 PRIOR_EXTREME_WINDOW = 20  # 前波高/低 = 前 20 根極值(不含當根)
-MIN_RR = 1.5               # R:R < 1.5 → rejected(AC-10)
+MIN_RR = 1.5               # R:R < 1.5 → rejected(AC-10);R2-01 於成交時以實際進場價複檢
 
-# ── 撮合(F-07)──
-MAX_HOLD_BARS = 20         # 持倉超過 20 根K未觸發停損/目標 → 以收盤價出場(失效)
+# ── 撮合(F-07;R2-02/03/04)──
+MIN_STOP_SLIP_RATIO = 10.0  # 停損距離須 ≥ 10×單邊滑價(R2-02,planner 預檢+成交複檢)
+MAX_HOLD_BARS = {"1d": 20, "1h": 120}  # 持倉上限按週期(R2-04);缺鍵即 KeyError,禁止默認值
 
-# ── 路徑 ──
+# ── 路徑(R2-06:第二輪帳務一律在 state/r2/,第一輪三檔原地凍結;cursor 跨輪延續)──
 DATA_DIR = "data"
-STATE_DIR = "state"
+STATE_DIR = "state"            # 第一輪封存檔與跨輪 cursor 所在
+R2_STATE_DIR = "state/r2"      # 第二輪台帳/權益/持倉/pending/遙測
 REPORT_PATH = "docs/index.html"
+ROUND = 2                      # 台帳 round 欄位值
