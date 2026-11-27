@@ -1,0 +1,7 @@
+date,track,symbol,timeframe,kind,status,detail
+2026-11-27T18:00:00+00:00,tech,EURUSD,1h,momentum,metric,body_atr_ratio=0.121;threshold=1.5;trend=down;bull=0;close_vs_hh=-0.004808;close_vs_ll=0.000239
+2026-11-27T18:00:00+00:00,tech,USDJPY,1h,momentum,metric,body_atr_ratio=0.168;threshold=1.5;trend=up;bull=0;close_vs_hh=-0.091003;close_vs_ll=0.369003
+2026-11-27T18:00:00+00:00,tech,GBPUSD,1h,momentum,metric,body_atr_ratio=0.077;threshold=1.5;trend=down;bull=1;close_vs_hh=-0.003562;close_vs_ll=0.000532
+2026-11-27T18:00:00+00:00,tech,AUDUSD,1h,momentum,metric,body_atr_ratio=0.0;threshold=1.5;trend=down;bull=0;close_vs_hh=-0.003333;close_vs_ll=0.001808
+2026-11-27T18:00:00+00:00,tech,USDJPY,1h,pullback,stop_too_tight,ema=159.421794
+2026-11-27T18:00:00+00:00,tech,AUDUSD,1h,pullback,stop_too_tight,ema=0.665576
