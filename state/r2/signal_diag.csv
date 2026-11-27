@@ -5,3 +5,12 @@ date,track,symbol,timeframe,kind,status,detail
 2026-11-27T18:00:00+00:00,tech,AUDUSD,1h,momentum,metric,body_atr_ratio=0.0;threshold=1.5;trend=down;bull=0;close_vs_hh=-0.003333;close_vs_ll=0.001808
 2026-11-27T18:00:00+00:00,tech,USDJPY,1h,pullback,stop_too_tight,ema=159.421794
 2026-11-27T18:00:00+00:00,tech,AUDUSD,1h,pullback,stop_too_tight,ema=0.665576
+2026-11-26,chip,MTX,1d,resonance,metric,foreign_net=-106275.0;trust_net=104920.0;same_sign=0;foreign_delta=-566.0;trust_delta=4002.0
+2026-11-26,chip,MTX,1d,zscore,metric,institution=foreign;z=-1.565;threshold=2.0
+2026-11-26,chip,MTX,1d,zscore,metric,institution=trust;z=2.357;threshold=2.0
+2026-11-27T00:00:00,tech,EURUSD,1d,momentum,metric,body_atr_ratio=0.609;threshold=1.5;trend=down;bull=0;close_vs_hh=-0.03379;close_vs_ll=0.005238
+2026-11-27T00:00:00,tech,USDJPY,1d,momentum,metric,body_atr_ratio=0.376;threshold=1.5;trend=up;bull=1;close_vs_hh=-0.669006;close_vs_ll=2.561996
+2026-11-27T00:00:00,tech,GBPUSD,1d,momentum,metric,body_atr_ratio=0.171;threshold=1.5;trend=down;bull=0;close_vs_hh=-0.04067;close_vs_ll=0.008435
+2026-11-27T00:00:00,tech,AUDUSD,1d,momentum,metric,body_atr_ratio=0.279;threshold=1.5;trend=down;bull=1;close_vs_hh=-0.039629;close_vs_ll=0.008726
+2026-11-26,chip,MTX,1d,zscore,approved,institution=trust;z=2.3573
+2026-11-26,chip,MTX,1d,streak,suppressed_by:zscore,days=5
